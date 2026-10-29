@@ -1,9 +1,9 @@
 // Сеть в приоритете (новая версия подхватывается сразу), без сети — из кэша. Запросы к скрипту таблицы и к Диску не трогаем.
-const CACHE = 'nf-shell-v1';
-const SHELL = ['./', 'index.html', 'map.js', 'vendor/d3.min.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'seed/seed.json',
-  'fonts/unbounded-latin-500-normal.woff2', 'fonts/unbounded-cyrillic-500-normal.woff2', 'fonts/unbounded-latin-600-normal.woff2', 'fonts/unbounded-cyrillic-600-normal.woff2',
-  'fonts/golos-text-latin-400-normal.woff2', 'fonts/golos-text-cyrillic-400-normal.woff2', 'fonts/golos-text-latin-500-normal.woff2', 'fonts/golos-text-cyrillic-500-normal.woff2',
-  'fonts/golos-text-latin-600-normal.woff2', 'fonts/golos-text-cyrillic-600-normal.woff2'];
+const CACHE = 'nf-shell-v2';
+const SHELL = ['./', 'index.html', 'map.js', 'd3.min.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'seed.json',
+  'unbounded-latin-500-normal.woff2', 'unbounded-cyrillic-500-normal.woff2', 'unbounded-latin-600-normal.woff2', 'unbounded-cyrillic-600-normal.woff2',
+  'golos-text-latin-400-normal.woff2', 'golos-text-cyrillic-400-normal.woff2', 'golos-text-latin-500-normal.woff2', 'golos-text-cyrillic-500-normal.woff2',
+  'golos-text-latin-600-normal.woff2', 'golos-text-cyrillic-600-normal.woff2'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

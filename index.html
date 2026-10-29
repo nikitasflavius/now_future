@@ -14,16 +14,16 @@
 <link rel="icon" href="icon-192.png">
 <title>Now&amp;Future</title>
 <style>
-@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(fonts/unbounded-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(fonts/unbounded-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
-@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
-@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(fonts/golos-text-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(fonts/golos-text-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
-@font-face{font-family:'Golos Text';font-weight:500;font-display:swap;src:url(fonts/golos-text-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:'Golos Text';font-weight:500;font-display:swap;src:url(fonts/golos-text-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
-@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(fonts/golos-text-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
-@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(fonts/golos-text-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(unbounded-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(unbounded-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(unbounded-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(unbounded-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(golos-text-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(golos-text-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:500;font-display:swap;src:url(golos-text-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Golos Text';font-weight:500;font-display:swap;src:url(golos-text-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(golos-text-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(golos-text-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
 /* Полевой блокнот урбаниста: сверху марка и статус, снизу четыре раздела, точки — шторкой «Now / Future». Только светлая тема. */
 :root{
   --paper:#F4F5F1; --surface:#FCFCFA; --surface2:#ECEEE8; --ink:#1C232B; --ink-2:#56616B; --line:#D9DCD4;
@@ -192,7 +192,7 @@ details.prompt pre{margin:0;padding:0 14px 14px;white-space:pre-wrap;overflow-wr
 </nav>
 <div id="toast" hidden></div>
 
-<script src="vendor/d3.min.js"></script>
+<script src="d3.min.js"></script>
 <script src="map.js"></script>
 <script>
 'use strict';
@@ -212,8 +212,8 @@ const points = () => connected() ? S.points : (UI.seed || []);
 const byId = id => points().find(p => p.id === id);
 
 /* ---------- images ---------- */
-function src(id, w){ if (!id) return ''; if (/^seed\//.test(id)) return id; return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1600); }
-function fb(id, w){ return /^seed\//.test(id) ? '' : ` onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&amp;sz=w${w || 1600}'"`; }
+function src(id, w){ if (!id) return ''; if (/\.jpg$/i.test(id)) return id; return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1600); }
+function fb(id, w){ return /\.jpg$/i.test(id) ? '' : ` onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&amp;sz=w${w || 1600}'"`; }
 const img = (id, w, alt, cls) => `<img${cls ? ` class="${cls}"` : ''} src="${src(id, w)}"${fb(id, w)} alt="${esc(alt || '')}" loading="lazy" decoding="async">`;
 
 /* ---------- coordinates ---------- */
@@ -333,7 +333,7 @@ function route(){
 window.addEventListener('hashchange', () => { UI.confirmDel = false; UI.popId = null; window.scrollTo(0, 0); route(); });
 
 function thumb(p){
-  const demo = /^seed\//.test(p.before || '') ? '<span class="demo">Пример</span>' : '';
+  const demo = /\.jpg$/i.test(p.before || '') ? '<span class="demo">Пример</span>' : '';
   if (!p.before) return `<div class="split"><span class="nophoto">Фото пока нет</span></div>`;
   return `<div class="split">${img(p.before, 900, '')}${p.after ? `${img(p.after, 900, '', 'aft')}<span class="div"></span><span class="lbl l1">Now</span><span class="lbl l2">Future</span>` : `<span class="planned">Пока без «Future»</span>`}${demo}</div>`;
 }
@@ -362,7 +362,7 @@ function renderFeed(){
 function renderPoint(id){
   const p = byId(id);
   if (!p) { app.innerHTML = `<a class="back" href="#">← К ленте</a><div class="empty"><p>Такой точки нет. Возможно, её удалили.</p></div>`; return; }
-  const isDemo = /^seed\//.test(p.before || '');
+  const isDemo = /\.jpg$/i.test(p.before || '');
   const modes = [];
   if (p.before && p.after) modes.push(['slider', 'Шторка'], ['pair', 'Рядом']); else if (p.before) modes.push(['single', 'Now']);
   if (p.markup) modes.push(['markup', 'Разметка']);
@@ -666,7 +666,7 @@ function renderMap(){
 }
 
 /* ---------- start ---------- */
-fetch('seed/seed.json').then(r => r.json()).then(j => { UI.seed = j; }).catch(() => { UI.seed = []; }).finally(() => { if (!UI.draft) route(); });
+fetch('seed.json').then(r => r.json()).then(j => { UI.seed = j; }).catch(() => { UI.seed = []; }).finally(() => { if (!UI.draft) route(); });
 route();
 pull(false);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && connected() && Date.now() - S.last > 60000 && !UI.draft) pull(false); });

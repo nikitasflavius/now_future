@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Now&amp;Future">
+<meta name="theme-color" content="#F4F5F1">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Now&amp;Future</title>
+<style>
+@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(fonts/unbounded-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(fonts/unbounded-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(fonts/golos-text-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Golos Text';font-weight:400;font-display:swap;src:url(fonts/golos-text-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:500;font-display:swap;src:url(fonts/golos-text-latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Golos Text';font-weight:500;font-display:swap;src:url(fonts/golos-text-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(fonts/golos-text-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:'Golos Text';font-weight:600;font-display:swap;src:url(fonts/golos-text-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-04FF}
+/* Полевой блокнот урбаниста: сверху марка и статус, снизу четыре раздела, точки — шторкой «Now / Future». Только светлая тема. */
+:root{
+  --paper:#F4F5F1; --surface:#FCFCFA; --surface2:#ECEEE8; --ink:#1C232B; --ink-2:#56616B; --line:#D9DCD4;
+  --now:#7E5E45; --future:#2E7A57; --future-ink:#1F5A3F; --future-soft:#E2EEE6; --now-soft:#EFE8E1;
+  --water:#D4E2E6; --land:#ECEBE4; --river:#A7C4CD; --danger:#A33A2B; --danger-soft:#F6E5E1;
+  --f-display:'Unbounded','Arial Black',Arial,sans-serif;
+  --f-body:'Golos Text',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  --f-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --r:16px; color-scheme:light;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--f-body);-webkit-text-size-adjust:100%;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+a{color:var(--future)}
+img{max-width:100%}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--future);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+
+#top{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top-in{display:flex;align-items:center;gap:12px;padding-block:12px}
+.mark{font-family:var(--f-display);font-weight:600;font-size:20px;letter-spacing:-.01em;text-decoration:none;color:var(--ink);white-space:nowrap}
+.mark .n{color:var(--now)} .mark .amp{color:var(--ink-2);font-weight:500} .mark .f{color:var(--future)}
+.sync{margin-left:auto;font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--line);display:inline-block}
+.sync.ok i{background:var(--future)} .sync.err i{background:var(--danger)} .sync.busy i{background:var(--now)}
+
+#nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);
+  padding:6px max(8px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+#nav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--ink-2);padding:5px 0;text-decoration:none;font-weight:500}
+#nav a.on{color:var(--ink);font-weight:600}
+#nav a.add svg{background:var(--future);color:var(--surface);border-radius:10px;padding:3px;width:30px;height:30px}
+#nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+main{padding-block:20px 32px}
+.note{padding:12px 14px;border-radius:var(--r);background:var(--now-soft);margin-bottom:16px;font-size:15px}
+.note b{font-weight:600}
+.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.meta{color:var(--ink-2);font-size:14px}
+.mono{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 16px;font-weight:500;text-decoration:none;color:var(--ink);font-size:15px}
+.btn.primary{background:var(--future);border-color:var(--future);color:var(--surface)}
+.btn.danger{color:var(--danger);border-color:#E6C9C2}
+.btn.ghost{background:transparent}
+.btn.wide{width:100%}
+.btn[disabled]{opacity:.5}
+.linkish{background:none;border:0;padding:0;color:var(--future);font-size:14px;text-decoration:underline;text-underline-offset:2px}
+
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 14px;font-size:16px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0 4px;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--future-soft);border-color:var(--future);color:var(--future-ink)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{display:inline-block;background:var(--future-soft);color:var(--future-ink);border-radius:999px;padding:2px 10px;font-size:13px}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:680px){.grid{grid-template-columns:1fr 1fr}}
+.card{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-decoration:none;color:inherit}
+.card-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.card h3{font-family:var(--f-display);font-weight:500;font-size:17px;letter-spacing:-.01em}
+.split{position:relative;aspect-ratio:2/1;background:var(--surface2);overflow:hidden}
+.split img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;max-width:none}
+.split .aft{clip-path:inset(0 0 0 50%)}
+.split .div{position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--surface);transform:translateX(-1px)}
+.lbl{position:absolute;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:999px;pointer-events:none}
+.split .lbl{bottom:8px}
+.l1{left:8px;background:var(--ink);color:var(--paper)} .l2{right:8px;background:var(--surface);color:var(--future)}
+.nophoto{position:absolute;inset:0;display:grid;place-items:center;color:var(--ink-2);font-size:14px}
+.planned{position:absolute;right:8px;bottom:8px;background:var(--surface);color:var(--now);font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+.demo{position:absolute;left:8px;top:8px;background:var(--now);color:var(--surface);font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:32px 20px;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.empty p{margin:0;max-width:44ch;color:var(--ink-2)}
+
+.back{display:inline-flex;gap:6px;color:var(--ink-2);text-decoration:none;font-size:15px;margin-bottom:12px}
+.modes{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.cmp{position:relative;width:100%;aspect-ratio:2/1;border-radius:var(--r);overflow:hidden;background:var(--surface2);touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;max-width:none;pointer-events:none;-webkit-user-drag:none}
+.cmp .top{position:absolute;inset:0}
+.cmp .handle{position:absolute;top:0;bottom:0;width:0;border:0;padding:0;background:none}
+.cmp .handle::before{content:"";position:absolute;top:0;bottom:0;left:-1.5px;width:3px;background:var(--surface);box-shadow:0 0 0 1px rgba(28,35,43,.15)}
+.cmp .knob{position:absolute;top:50%;left:0;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--surface);box-shadow:0 2px 10px rgba(28,35,43,.25);display:grid;place-items:center;font-weight:600}
+.cmp .lbl{top:10px}
+.pair{display:grid;grid-template-columns:1fr;gap:12px}
+@media (min-width:680px){.pair{grid-template-columns:1fr 1fr}}
+.pair figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.pair img,.single img{width:100%;border-radius:var(--r);display:block;background:var(--surface2)}
+.head{display:flex;flex-direction:column;gap:6px;margin-top:20px}
+.head h1{font-family:var(--f-display);font-weight:600;font-size:clamp(26px,7vw,36px);letter-spacing:-.015em;line-height:1.15}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--danger-soft);border-radius:var(--r);padding:10px 14px;margin-top:12px}
+.facts{display:grid;grid-template-columns:1fr;gap:10px;margin-top:16px}
+@media (min-width:680px){.facts{grid-template-columns:1fr 1fr}}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.fact .v{overflow-wrap:anywhere}
+.row-links{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;margin-top:2px}
+details.prompt{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+details.prompt summary{padding:14px;font-weight:600;display:flex;justify-content:space-between;gap:12px;align-items:center;list-style:none}
+details.prompt summary::-webkit-details-marker{display:none}
+details.prompt summary::after{content:"Показать";font-weight:500;font-size:14px;color:var(--future)}
+details.prompt[open] summary::after{content:"Скрыть"}
+details.prompt pre{margin:0;padding:0 14px 14px;white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-mono);font-size:13px;line-height:1.55}
+.prompt-bar{padding:0 14px 12px}
+.notes{margin-top:16px}
+.notes p{white-space:pre-wrap;margin:6px 0 0}
+
+.form{display:grid;gap:18px}
+.form h1{font-family:var(--f-display);font-weight:600;font-size:26px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.slots .field:first-child{grid-column:1 / -1}
+@media (min-width:680px){.slots{grid-template-columns:1fr 1fr 1fr}.slots .field:first-child{grid-column:auto}}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-weight:600;font-size:14px}
+.hint{font-size:13px;color:var(--ink-2)}
+.field input[type=text],.field input[type=password],.field input[type=url],.field textarea{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 12px;width:100%;font-size:16px}
+.field textarea{min-height:110px;resize:vertical}
+.field textarea.big{min-height:200px;font-family:var(--f-mono);font-size:13px}
+.drop{border:1px dashed var(--line);background:var(--surface);border-radius:var(--r);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:130px;justify-content:center;align-items:center;text-align:center;color:var(--ink-2);font-size:13px;position:relative;overflow:hidden}
+.drop img{max-height:140px;border-radius:8px;object-fit:cover}
+.drop input{position:absolute;inset:0;opacity:0}
+.drop .rm{position:relative;z-index:2;background:none;border:0;color:var(--danger);font-size:13px;text-decoration:underline}
+.two{display:grid;grid-template-columns:1fr;gap:16px}
+@media (min-width:680px){.two{grid-template-columns:1fr 1fr}}
+.parsed{font-size:13px} .parsed.ok{color:var(--future)} .parsed.bad{color:var(--danger)}
+.status{font-size:14px;color:var(--ink-2)}
+.status.bad{color:var(--danger)}
+
+.mapbox{position:relative;height:calc(100vh - 190px);height:calc(100dvh - 160px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));min-height:360px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line);background:var(--water)}
+.mapbox svg{display:block;width:100%;height:100%;touch-action:none}
+.zoombtns{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.zoombtns button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:18px;font-weight:600}
+.legend{position:absolute;left:10px;top:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:7px 11px;font-size:12px;display:flex;flex-direction:column;gap:3px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.pop{position:absolute;left:10px;right:10px;bottom:10px;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 8px 28px rgba(28,35,43,.18)}
+.pop .x{position:absolute;right:8px;top:8px;width:32px;height:32px;border-radius:50%;border:0;background:var(--surface);font-size:18px;z-index:2}
+.pop .card-body{gap:8px}
+
+.sect{margin-top:24px}
+.sect:first-child{margin-top:0}
+.sect h2{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:0 2px 8px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--f-display);font-weight:600;font-size:24px;font-variant-numeric:tabular-nums}
+.kml-list{display:grid;gap:6px;max-height:320px;overflow:auto}
+.kml-row{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.kml-row input{width:20px;height:20px;margin-top:2px}
+#toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-size:14px;z-index:40;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header id="top"><div class="wrap top-in">
+  <a class="mark" href="#" aria-label="Now&amp;Future, лента"><span class="n">Now</span><span class="amp">&amp;</span><span class="f">Future</span></a>
+  <span class="sync" id="sync"><i></i><span></span></span>
+</div></header>
+<main class="wrap" id="app" aria-live="polite"></main>
+<nav id="nav" aria-label="Разделы">
+  <a href="#" data-v="feed"><svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="7" rx="2"/><rect x="3.5" y="13" width="17" height="7" rx="2"/></svg>Лента</a>
+  <a href="#map" data-v="map"><svg viewBox="0 0 24 24"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4z"/><path d="M9 4v14M15 6v14"/></svg>Карта</a>
+  <a href="#new" data-v="new" class="add"><svg viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>Добавить</a>
+  <a href="#more" data-v="more"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/></svg>Ещё</a>
+</nav>
+<div id="toast" hidden></div>
+
+<script src="vendor/d3.min.js"></script>
+<script src="map.js"></script>
+<script>
+'use strict';
+const REF = [["Москва",55.7558,37.6173,1],["Санкт-Петербург",59.9343,30.3351,1],["Нижний Новгород",56.3269,44.0059,2],["Казань",55.7963,49.1088,2],["Ростов-на-Дону",47.2357,39.7015,1],["Волгоград",48.708,44.5133,2],["Краснодар",45.0355,38.9753,2],["Воронеж",51.6608,39.2003,2],["Ярославль",57.6261,39.8845,2],["Тверь",56.8587,35.9176,2],["Самара",53.1959,50.1002,2],["Пермь",58.0105,56.2502,2],["Екатеринбург",56.8389,60.6057,1],["Омск",54.9885,73.3242,2],["Новосибирск",55.0084,82.9357,1],["Красноярск",56.0153,92.8932,2],["Иркутск",52.287,104.305,2],["Владивосток",43.1155,131.8855,1],["Архангельск",64.5393,40.5187,2],["Мурманск",68.9585,33.0827,2]];
+const LS = 'nf-state-v1';
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- state ---------- */
+function defState(){ return { v: 1, cfg: { url: '', token: '' }, points: [], last: 0 }; }
+let S = (() => { try { const j = JSON.parse(localStorage.getItem(LS)); if (j && j.v === 1) return Object.assign(defState(), j, { cfg: Object.assign(defState().cfg, j.cfg || {}) }); } catch(e) {} return defState(); })();
+function save(){ try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e) {} }
+const UI = { q: '', tag: null, mode: 'slider', pos: 50, confirmDel: false, draft: null, saving: '', savingBad: false, popId: null, focusId: null, kml: null, seed: null, busy: 0, err: '', migrating: '' };
+const connected = () => !!(S.cfg.url && S.cfg.token);
+const points = () => connected() ? S.points : (UI.seed || []);
+const byId = id => points().find(p => p.id === id);
+
+/* ---------- images ---------- */
+function src(id, w){ if (!id) return ''; if (/^seed\//.test(id)) return id; return 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(id) + '=w' + (w || 1600); }
+function fb(id, w){ return /^seed\//.test(id) ? '' : ` onerror="this.onerror=null;this.src='https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&amp;sz=w${w || 1600}'"`; }
+const img = (id, w, alt, cls) => `<img${cls ? ` class="${cls}"` : ''} src="${src(id, w)}"${fb(id, w)} alt="${esc(alt || '')}" loading="lazy" decoding="async">`;
+
+/* ---------- coordinates ---------- */
+const toNum = s => parseFloat(String(s).replace(',', '.'));
+function valid(lat, lon){ return (isFinite(lat) && isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180) ? { lat: +(+lat).toFixed(6), lon: +(+lon).toFixed(6) } : null; }
+function parseCoords(raw){
+  if (!raw) return null;
+  let s = String(raw).trim();
+  try { s = decodeURIComponent(s); } catch(e) {}
+  if (/yandex|ya\.ru/i.test(s)) {
+    for (const key of ['panorama\\[point\\]', 'whatshere\\[point\\]', 'pt', 'll']) {
+      const m = s.match(new RegExp('[?&]' + key + '=\\s*(-?\\d+(?:\\.\\d+)?)\\s*,\\s*(-?\\d+(?:\\.\\d+)?)'));
+      if (m) return valid(toNum(m[2]), toNum(m[1]));
+    }
+  }
+  const g = s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (/google/i.test(s) && g) return valid(toNum(g[1]), toNum(g[2]));
+  const re = /(\d+(?:[.,]\d+)?)\s*°\s*(?:(\d+(?:[.,]\d+)?)\s*['′’]\s*)?(?:(\d+(?:[.,]\d+)?)\s*(?:"|″|”|''|′′)\s*)?([NSEWСЮВЗ])?/gi;
+  const parts = [...s.matchAll(re)];
+  if (parts.length >= 2) {
+    const v = m => { let d = toNum(m[1]) + (m[2] ? toNum(m[2]) / 60 : 0) + (m[3] ? toNum(m[3]) / 3600 : 0); const h = (m[4] || '').toUpperCase(); if ('SЮWЗ'.includes(h) && h) d = -d; return { d, h }; };
+    const a = v(parts[0]), b = v(parts[1]);
+    if (a.h && 'EWВЗ'.includes(a.h) && b.h && 'NSСЮ'.includes(b.h)) return valid(b.d, a.d);
+    return valid(a.d, b.d);
+  }
+  const nums = s.match(/-?\d+(?:[.,]\d+)?/g);
+  if (nums && nums.length >= 2) return valid(toNum(nums[0]), toNum(nums[1]));
+  return null;
+}
+function dms(v, pos, neg){ const h = v >= 0 ? pos : neg; v = Math.abs(v); const d = Math.floor(v); const mf = (v - d) * 60; const m = Math.floor(mf); const s = (mf - m) * 60; return `${d}°${String(m).padStart(2,'0')}′${s.toFixed(2).padStart(5,'0')}″ ${h}`; }
+const fmtDms = p => `${dms(p.lat,'N','S')}, ${dms(p.lon,'E','W')}`;
+const fmtDec = p => `${(+p.lat).toFixed(5)}, ${(+p.lon).toFixed(5)}`;
+const hasXY = p => isFinite(p.lat) && isFinite(p.lon) && p.lat !== '' && p.lon !== '';
+const yandexUrl = p => `https://yandex.ru/maps/?ll=${p.lon},${p.lat}&z=17&pt=${p.lon},${p.lat},pm2rdm`;
+const fmtDate = iso => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }); };
+function distM(a, b){ const R = 6371000, r = Math.PI / 180; const dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r; const x = Math.sin(dLat/2) ** 2 + Math.cos(a.lat*r) * Math.cos(b.lat*r) * Math.sin(dLon/2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); }
+
+/* ---------- server ---------- */
+function setBusy(d){ UI.busy = Math.max(0, UI.busy + d); uiSync(); }
+async function api(payload){
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 60000);
+  setBusy(1);
+  try {
+    const r = await fetch(S.cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ token: S.cfg.token }, payload)), redirect: 'follow', signal: ctl.signal });
+    let j; try { j = JSON.parse(await r.text()); } catch(e) { throw new Error('ответ не похож на ответ скрипта'); }
+    if (!j.ok) throw new Error(j.error || 'ошибка скрипта');
+    UI.err = ''; return j;
+  } catch(e) { UI.err = e.name === 'AbortError' ? 'долгий ответ' : String(e.message || e); throw e; }
+  finally { clearTimeout(t); setBusy(-1); }
+}
+async function getJson(action, cfg){
+  const c = cfg || S.cfg;
+  const u = c.url + (c.url.includes('?') ? '&' : '?') + 'action=' + action + '&token=' + encodeURIComponent(c.token);
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 30000);
+  try {
+    const r = await fetch(u, { redirect: 'follow', signal: ctl.signal });
+    let j; try { j = JSON.parse(await r.text()); } catch(e) { throw new Error('ответ не похож на ответ скрипта'); }
+    if (!j.ok) throw new Error(j.error || 'ошибка');
+    return j;
+  } finally { clearTimeout(t); }
+}
+async function pull(manual){
+  if (!connected()) return;
+  setBusy(1);
+  try {
+    const j = await getJson('pull');
+    S.points = (j.points || []).filter(p => p.id).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+    S.last = Date.now(); UI.err = ''; save();
+    if (manual) toast('Обновлено из таблицы');
+  } catch(e) { UI.err = e.name === 'AbortError' ? 'долгий ответ' : String(e.message || e); if (manual) toast('Не получилось: ' + UI.err); }
+  finally { setBusy(-1); if (!UI.draft) route(); }
+}
+function uiSync(){
+  const el = $('#sync'); if (!el) return;
+  let cls = '', txt = '';
+  if (!connected()) { txt = 'примеры, без таблицы'; }
+  else if (UI.busy) { cls = 'busy'; txt = 'синхронизация…'; }
+  else if (UI.err) { cls = 'err'; txt = 'нет связи с таблицей'; }
+  else { cls = 'ok'; txt = 'таблица'; }
+  el.className = 'sync ' + cls; el.lastElementChild.textContent = txt;
+}
+let toastT;
+function toast(t){ const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2600); }
+
+/* ---------- images in ---------- */
+async function shrink(file){
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 2400 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    const out = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86));
+    return out || file;
+  } catch(e) { return file; }
+}
+const toB64 = blob => new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(String(fr.result).split(',')[1]); fr.onerror = rej; fr.readAsDataURL(blob); });
+async function uploadBlob(blob, name){ const j = await api({ op: 'upload', name: name || 'photo.jpg', mime: blob.type || 'image/jpeg', data: await toB64(blob) }); return j.id; }
+
+/* ---------- filters ---------- */
+function allTags(){ const m = new Map(); points().forEach(p => (p.tags || []).forEach(t => m.set(t, (m.get(t) || 0) + 1))); return [...m.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]); }
+function filtered(){ const q = UI.q.trim().toLowerCase(); return points().filter(p => (!UI.tag || (p.tags || []).includes(UI.tag)) && (!q || [p.city, p.region, p.place, p.notes, (p.tags || []).join(' ')].join(' ').toLowerCase().includes(q))); }
+
+/* ---------- routing ---------- */
+function route(){
+  const h = location.hash.slice(1);
+  const view = h === 'map' ? 'map' : h === 'new' ? 'new' : h === 'more' ? 'more' : h.startsWith('p-') ? 'point' : h.startsWith('edit-') ? 'edit' : 'feed';
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === view || (a.dataset.v === 'feed' && view === 'point') || (a.dataset.v === 'new' && view === 'edit')));
+  uiSync();
+  if (view !== 'new' && view !== 'edit') UI.draft = null;
+  if (view === 'map') return renderMap();
+  if (view === 'new') return renderEditor(null);
+  if (view === 'edit') return renderEditor(h.slice(5));
+  if (view === 'point') return renderPoint(h.slice(2));
+  if (view === 'more') return renderMore();
+  renderFeed();
+}
+window.addEventListener('hashchange', () => { UI.confirmDel = false; UI.popId = null; window.scrollTo(0, 0); route(); });
+
+function thumb(p){
+  const demo = /^seed\//.test(p.before || '') ? '<span class="demo">Пример</span>' : '';
+  if (!p.before) return `<div class="split"><span class="nophoto">Фото пока нет</span></div>`;
+  return `<div class="split">${img(p.before, 900, '')}${p.after ? `${img(p.after, 900, '', 'aft')}<span class="div"></span><span class="lbl l1">Now</span><span class="lbl l2">Future</span>` : `<span class="planned">Пока без «Future»</span>`}${demo}</div>`;
+}
+
+/* ---------- feed ---------- */
+function renderFeed(){
+  const all = points(), list = filtered(), tags = allTags();
+  let h = '';
+  if (!connected()) h += `<div class="note">Сейчас показаны два примера. Чтобы добавлять свои точки, подключи таблицу в разделе <a href="#more">«Ещё»</a>.</div>`;
+  else if (UI.err && !all.length) h += `<div class="note">Не удалось связаться с таблицей: ${esc(UI.err)}. Проверь подключение в разделе <a href="#more">«Ещё»</a>.</div>`;
+  if (!all.length) {
+    h += connected() ? `<div class="empty"><span class="eyebrow">Здесь пока пусто</span><p>Добавь первую точку или перенеси два примера в таблицу в разделе «Ещё».</p><a class="btn primary" href="#new">Добавить точку</a></div>` : (UI.seed === null ? '<p class="status">Загружаю примеры…</p>' : '');
+  } else {
+    h += `<input class="search" id="q" type="search" placeholder="Город, регион, тег…" value="${esc(UI.q)}" aria-label="Поиск">`;
+    h += tags.length ? `<div class="chips">${tags.map(t => `<button class="chip" data-tag="${esc(t)}" aria-pressed="${UI.tag === t}">${esc(t)}</button>`).join('')}</div>` : '<div style="height:12px"></div>';
+    h += list.length ? `<div class="grid">${list.map(p => `<a class="card" href="#p-${esc(p.id)}">${thumb(p)}<div class="card-body"><h3>${esc(p.city)}</h3><div class="meta">${esc([p.place, p.region].filter(Boolean).join(' · '))}</div>${(p.tags || []).length ? `<div class="tags">${p.tags.slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}</div></a>`).join('')}</div>`
+      : `<div class="empty"><p>Под этот фильтр ничего не подходит.</p><button class="btn" id="reset">Сбросить</button></div>`;
+  }
+  app.innerHTML = h;
+  const q = $('#q'); if (q) q.addEventListener('input', e => { UI.q = e.target.value; const c = e.target.selectionStart; renderFeed(); const n = $('#q'); n.focus(); try { n.setSelectionRange(c, c); } catch(_) {} });
+  app.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { UI.tag = UI.tag === b.dataset.tag ? null : b.dataset.tag; renderFeed(); }));
+  const r = $('#reset'); if (r) r.addEventListener('click', () => { UI.q = ''; UI.tag = null; renderFeed(); });
+}
+
+/* ---------- point ---------- */
+function renderPoint(id){
+  const p = byId(id);
+  if (!p) { app.innerHTML = `<a class="back" href="#">← К ленте</a><div class="empty"><p>Такой точки нет. Возможно, её удалили.</p></div>`; return; }
+  const isDemo = /^seed\//.test(p.before || '');
+  const modes = [];
+  if (p.before && p.after) modes.push(['slider', 'Шторка'], ['pair', 'Рядом']); else if (p.before) modes.push(['single', 'Now']);
+  if (p.markup) modes.push(['markup', 'Разметка']);
+  if (!modes.find(m => m[0] === UI.mode)) UI.mode = modes.length ? modes[0][0] : '';
+  let view = '';
+  if (UI.mode === 'slider') view = `<div class="cmp" id="cmp">${img(p.before, 2000, 'Как есть: ' + p.city)}<div class="top" id="cmp-top" style="clip-path:inset(0 0 0 ${UI.pos}%)">${img(p.after, 2000, 'Как могло бы быть: ' + p.city)}</div><span class="lbl l1">Now</span><span class="lbl l2">Future</span><button class="handle" id="cmp-h" role="slider" aria-label="Граница между Now и Future" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(UI.pos)}" style="left:${UI.pos}%"><span class="knob" aria-hidden="true">‹›</span></button></div>`;
+  else if (UI.mode === 'pair') view = `<div class="pair"><figure><span class="eyebrow" style="color:var(--now)">Now</span>${img(p.before, 1600, 'Как есть')}</figure><figure><span class="eyebrow" style="color:var(--future)">Future</span>${img(p.after, 1600, 'Как могло бы быть')}</figure></div>`;
+  else if (UI.mode === 'markup') view = `<div class="single">${img(p.markup, 2000, 'Кадр с разметкой')}</div>`;
+  else if (UI.mode === 'single') view = `<div class="single">${img(p.before, 2000, 'Как есть')}</div>`;
+  else view = `<div class="empty"><p>Фото пока нет.</p>${connected() ? `<a class="btn primary" href="#edit-${esc(p.id)}">Добавить фото</a>` : ''}</div>`;
+  app.innerHTML = `<a class="back" href="#">← К ленте</a>
+    ${modes.length > 1 ? `<div class="modes" role="group" aria-label="Вид">${modes.map(m => `<button class="chip" data-mode="${m[0]}" aria-pressed="${UI.mode === m[0]}">${m[1]}</button>`).join('')}</div>` : ''}
+    ${view}
+    <div class="head">
+      ${p.region ? `<span class="eyebrow">${esc(p.region)}</span>` : ''}
+      <h1>${esc(p.city)}</h1>
+      ${p.place ? `<div class="meta" style="font-size:16px">${esc(p.place)}</div>` : ''}
+      ${(p.tags || []).length ? `<div class="tags" style="margin-top:4px">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
+    </div>
+    ${connected() && !isDemo ? `<div class="actions"><a class="btn" href="#edit-${esc(p.id)}">Изменить</a><button class="btn danger" id="del">Удалить</button></div>` : ''}
+    ${UI.confirmDel ? `<div class="confirm" role="alertdialog" aria-label="Удаление"><span>Удалить точку и её фото с Диска?</span><button class="btn danger" id="del-yes">Удалить</button><button class="btn ghost" id="del-no">Отмена</button></div>` : ''}
+    <div class="facts">
+      ${hasXY(p) ? `<div class="fact"><span class="eyebrow">Координаты</span><span class="v mono">${fmtDms(p)}</span><span class="v mono" style="color:var(--ink-2)">${fmtDec(p)}</span><span class="row-links"><button class="linkish" id="copy-c">Скопировать</button><a href="${yandexUrl(p)}" target="_blank" rel="noopener">Яндекс Карты ↗</a><a href="#map" id="on-map">На карте</a></span></div>` : ''}
+      ${p.service || p.createdAt ? `<div class="fact">${p.service ? `<span class="eyebrow">Сервис</span><span class="v">${esc(p.service)}</span>` : ''}${p.createdAt ? `<span class="eyebrow" style="margin-top:${p.service ? 6 : 0}px">Добавлено</span><span class="v">${fmtDate(p.createdAt)}</span>` : ''}</div>` : ''}
+    </div>
+    ${p.prompt ? `<details class="prompt"><summary>Промпт</summary><div class="prompt-bar"><button class="linkish" id="copy-p">Скопировать промпт</button></div><pre id="prompt-text">${esc(p.prompt)}</pre></details>` : ''}
+    ${p.notes ? `<div class="notes"><span class="eyebrow">Заметки</span><p>${esc(p.notes)}</p></div>` : ''}`;
+  app.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { UI.mode = b.dataset.mode; renderPoint(id); }));
+  const on = (sel, fn) => { const el = $(sel); if (el) el.addEventListener('click', fn); };
+  on('#del', () => { UI.confirmDel = true; renderPoint(id); });
+  on('#del-no', () => { UI.confirmDel = false; renderPoint(id); });
+  on('#del-yes', () => removePoint(p));
+  on('#copy-c', e => copy(fmtDms(p) + ' (' + fmtDec(p) + ')', e.currentTarget));
+  on('#copy-p', e => copy(p.prompt, e.currentTarget, '#prompt-text'));
+  on('#on-map', () => { UI.focusId = p.id; });
+  if (UI.mode === 'slider') wireSlider();
+}
+function copy(text, btn, sel){
+  const label = btn.textContent;
+  const done = ok => { btn.textContent = ok ? 'Скопировано' : 'Выдели текст и скопируй вручную'; setTimeout(() => btn.textContent = label, 1800); };
+  const fallback = () => { if (sel) { const el = $(sel); const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); } done(false); };
+  try { navigator.clipboard.writeText(text).then(() => done(true), fallback); } catch(e) { fallback(); }
+}
+function wireSlider(){
+  const box = $('#cmp'), top = $('#cmp-top'), h = $('#cmp-h'), b = box.querySelector('img');
+  const set = v => { UI.pos = Math.max(0, Math.min(100, v)); top.style.clipPath = `inset(0 0 0 ${UI.pos}%)`; h.style.left = UI.pos + '%'; h.setAttribute('aria-valuenow', Math.round(UI.pos)); };
+  const at = e => { const r = box.getBoundingClientRect(); set((e.clientX - r.left) / r.width * 100); };
+  let drag = false;
+  box.addEventListener('pointerdown', e => { drag = true; try { box.setPointerCapture(e.pointerId); } catch(_) {} at(e); });
+  box.addEventListener('pointermove', e => { if (drag) at(e); });
+  ['pointerup', 'pointercancel'].forEach(ev => box.addEventListener(ev, () => drag = false));
+  h.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') { set(UI.pos - 5); e.preventDefault(); } if (e.key === 'ArrowRight') { set(UI.pos + 5); e.preventDefault(); } });
+  const fit = () => { if (b.naturalWidth) box.style.aspectRatio = b.naturalWidth + ' / ' + b.naturalHeight; };
+  if (b.complete) fit(); else b.addEventListener('load', fit);
+}
+async function removePoint(p){
+  try {
+    await api({ op: 'delete', id: p.id });
+    S.points = S.points.filter(x => x.id !== p.id); save();
+    toast('Точка удалена'); location.hash = '';
+  } catch(e) { UI.confirmDel = false; renderPoint(p.id); toast('Не получилось удалить: ' + UI.err); }
+}
+
+/* ---------- editor ---------- */
+function renderEditor(id){
+  if (!connected()) { app.innerHTML = `<div class="empty"><span class="eyebrow">Таблица не подключена</span><p>Фото хранятся на твоём Google Диске, поэтому сначала подключи таблицу.</p><a class="btn primary" href="#more">Подключить</a></div>`; return; }
+  const p = id ? byId(id) : null;
+  if (id && !p) { app.innerHTML = `<div class="empty"><p>Такой точки нет.</p></div>`; return; }
+  if (!UI.draft) UI.draft = p ? { city: p.city || '', region: p.region || '', place: p.place || '', coords: hasXY(p) ? fmtDms(p) : '', tags: (p.tags || []).join(', '), service: p.service || '', prompt: p.prompt || '', notes: p.notes || '', files: {}, drop: {} } : { city: '', region: '', place: '', coords: '', tags: '', service: 'Arena', prompt: '', notes: '', files: {}, drop: {} };
+  const d = UI.draft;
+  const slot = (key, label, hint) => {
+    const f = d.files[key]; const cur = p && p[key] && !d.drop[key] ? p[key] : '';
+    const preview = f ? `<img src="${f.preview}" alt="">` : (cur ? img(cur, 600, '') : '');
+    return `<div class="field"><label for="f-${key}">${label}</label><div class="drop">${preview || `<span>${hint}</span>`}<span>${preview ? 'Нажми, чтобы заменить' : 'Выбрать фото'}</span><input type="file" id="f-${key}" accept="image/*" data-key="${key}">${preview && key !== 'before' ? `<button type="button" class="rm" data-rm="${key}">Убрать</button>` : ''}</div></div>`;
+  };
+  const c = d.coords ? parseCoords(d.coords) : null;
+  app.innerHTML = `<a class="back" href="${p ? '#p-' + esc(p.id) : '#'}">← ${p ? 'К точке' : 'К ленте'}</a>
+  <form class="form" id="form" novalidate>
+    <h1>${p ? 'Изменить точку' : 'Новая точка'}</h1>
+    <div class="slots">${slot('before', 'Now', 'Кадр улицы сейчас')}${slot('after', 'Future', 'Результат нейросети')}${slot('markup', 'Разметка', 'Необязательно')}</div>
+    <div class="two">
+      <div class="field"><label for="i-city">Город</label><input type="text" id="i-city" value="${esc(d.city)}" placeholder="Торжок" autocomplete="off"></div>
+      <div class="field"><label for="i-region">Регион</label><input type="text" id="i-region" value="${esc(d.region)}" placeholder="Тверская область" autocomplete="off"></div>
+    </div>
+    <div class="field"><label for="i-place">Место</label><input type="text" id="i-place" value="${esc(d.place)}" placeholder="Улица, перекрёсток, площадь" autocomplete="off"></div>
+    <div class="field"><label for="i-coords">Координаты</label><input type="text" id="i-coords" value="${esc(d.coords)}" placeholder="56°44'17.68&quot;N 38°50'42.94&quot;E" autocomplete="off" autocapitalize="off" spellcheck="false"><span class="hint">Градусы с минутами и секундами, десятичные градусы или ссылка из Яндекс Карт.</span><span class="parsed ${d.coords ? (c ? 'ok' : 'bad') : ''}" id="coords-out">${d.coords ? (c ? 'Распознано: ' + fmtDec(c) : 'Не получилось распознать') : ''}</span></div>
+    <div class="two">
+      <div class="field"><label for="i-tags">Теги</label><input type="text" id="i-tags" value="${esc(d.tags)}" placeholder="реставрация, дождевые сады" autocomplete="off"><span class="hint">Через запятую.</span>${allTags().length ? `<div class="chips" style="padding:4px 0 0;margin:0">${allTags().slice(0, 14).map(t => `<button type="button" class="chip" data-addtag="${esc(t)}">+ ${esc(t)}</button>`).join('')}</div>` : ''}</div>
+      <div class="field"><label for="i-service">Сервис</label><input type="text" id="i-service" value="${esc(d.service)}" placeholder="Arena, Gemini" autocomplete="off"></div>
+    </div>
+    <div class="field"><label for="i-prompt">Промпт</label><textarea class="big" id="i-prompt" placeholder="Текст, который ушёл в нейросеть">${esc(d.prompt)}</textarea></div>
+    <div class="field"><label for="i-notes">Заметки</label><textarea id="i-notes" placeholder="Что получилось, что модель пропустила">${esc(d.notes)}</textarea></div>
+    <div class="actions" style="margin-top:0"><button class="btn primary" type="submit" id="save" ${UI.saving ? 'disabled' : ''}>${p ? 'Сохранить' : 'Добавить точку'}</button><a class="btn ghost" href="${p ? '#p-' + esc(p.id) : '#'}">Отмена</a></div>
+    <span class="status${UI.savingBad ? ' bad' : ''}" id="save-status">${esc(UI.saving)}</span>
+  </form>`;
+  const bind = (sel, key) => { const el = $('#' + sel); el.addEventListener('input', () => { d[key] = el.value; if (key === 'coords') { const cc = parseCoords(el.value); const o = $('#coords-out'); o.className = 'parsed ' + (el.value ? (cc ? 'ok' : 'bad') : ''); o.textContent = el.value ? (cc ? 'Распознано: ' + fmtDec(cc) : 'Не получилось распознать') : ''; } }); };
+  [['i-city','city'],['i-region','region'],['i-place','place'],['i-coords','coords'],['i-tags','tags'],['i-service','service'],['i-prompt','prompt'],['i-notes','notes']].forEach(a => bind(...a));
+  app.querySelectorAll('input[type=file]').forEach(inp => inp.addEventListener('change', () => { const file = inp.files[0]; if (!file) return; const k = inp.dataset.key; if (d.files[k]) URL.revokeObjectURL(d.files[k].preview); d.files[k] = { file, preview: URL.createObjectURL(file) }; d.drop[k] = false; renderEditor(id); }));
+  app.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.rm; if (d.files[k]) { URL.revokeObjectURL(d.files[k].preview); delete d.files[k]; } d.drop[k] = true; renderEditor(id); }));
+  app.querySelectorAll('[data-addtag]').forEach(b => b.addEventListener('click', () => { const list = d.tags.split(',').map(s => s.trim()).filter(Boolean); if (!list.includes(b.dataset.addtag)) list.push(b.dataset.addtag); d.tags = list.join(', '); $('#i-tags').value = d.tags; }));
+  $('#form').addEventListener('submit', e => { e.preventDefault(); savePoint(p); });
+}
+function setStatus(t, bad){ UI.saving = t; UI.savingBad = !!bad; const el = $('#save-status'); if (el) { el.textContent = t; el.className = 'status' + (bad ? ' bad' : ''); } const b = $('#save'); if (b) b.disabled = !!t && !bad; }
+const newId = () => 'pt-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+async function savePoint(p){
+  const d = UI.draft;
+  if (!d.city.trim()) return setStatus('Укажи город.', true);
+  const c = parseCoords(d.coords); if (!c) return setStatus('Не получилось распознать координаты.', true);
+  const ids = {}, trash = [];
+  try {
+    for (const key of ['before', 'after', 'markup']) {
+      const f = d.files[key];
+      if (f) {
+        setStatus('Загружаю «' + ({ before: 'Now', after: 'Future', markup: 'Разметка' })[key] + '» на Диск…');
+        ids[key] = await uploadBlob(await shrink(f.file), key + '.jpg');
+        if (p && p[key]) trash.push(p[key]);
+      } else if (d.drop[key]) { ids[key] = ''; if (p && p[key]) trash.push(p[key]); }
+    }
+    setStatus('Сохраняю в таблицу…');
+    const now = new Date().toISOString();
+    const body = { id: p ? p.id : newId(), city: d.city.trim(), region: d.region.trim(), place: d.place.trim(), lat: c.lat, lon: c.lon,
+      before: 'before' in ids ? ids.before : (p && p.before) || '', after: 'after' in ids ? ids.after : (p && p.after) || '', markup: 'markup' in ids ? ids.markup : (p && p.markup) || '',
+      tags: d.tags.split(',').map(s => s.trim()).filter(Boolean), service: d.service.trim(), prompt: d.prompt, notes: d.notes.trim(), createdAt: (p && p.createdAt) || now, updatedAt: now };
+    await api({ op: 'save', point: body });
+    if (trash.length) api({ op: 'trash', ids: trash }).catch(() => {});
+    S.points = [body, ...S.points.filter(x => x.id !== body.id)].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))); save();
+    Object.values(d.files).forEach(f => URL.revokeObjectURL(f.preview));
+    UI.saving = ''; UI.draft = null; UI.mode = 'slider';
+    location.hash = 'p-' + body.id;
+  } catch(e) { setStatus('Не получилось сохранить: ' + UI.err, true); }
+}
+
+/* ---------- more ---------- */
+function renderMore(){
+  const all = connected() ? S.points : [];
+  const cities = new Set(all.map(p => p.city)).size, done = all.filter(p => p.after).length;
+  const seedMissing = connected() && UI.seed && UI.seed.some(sp => !S.points.find(p => p.id === sp.id));
+  let h = '';
+  if (connected()) h += `<div class="sect"><h2>Атлас</h2><div class="stats"><div class="stat"><b>${all.length}</b><span class="meta">точек</span></div><div class="stat"><b>${cities}</b><span class="meta">городов</span></div><div class="stat"><b>${done}</b><span class="meta">с «Future»</span></div></div></div>`;
+  h += `<div class="sect"><h2>Таблица</h2><div class="box">
+    <div class="field"><label for="c-url">Адрес скрипта (Web app URL)</label><input type="url" id="c-url" value="${esc(S.cfg.url)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="field"><label for="c-token">Пароль (тот же, что в скрипте)</label><input type="password" id="c-token" value="${esc(S.cfg.token)}" autocomplete="off"></div>
+    <button class="btn primary wide" id="c-save">${connected() ? 'Проверить и сохранить' : 'Подключить'}</button>
+    <span class="status" id="c-status">${connected() ? (UI.err ? 'Последняя попытка: ' + esc(UI.err) : 'Подключено' + (S.last ? ' · обновлено ' + new Date(S.last).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '')) : 'Пока не подключено: точки хранятся в Google Таблице, фото — на твоём Диске.'}</span>
+    ${connected() ? '<button class="btn wide" id="c-pull">Обновить из таблицы</button>' : ''}
+  </div></div>`;
+  if (seedMissing) h += `<div class="sect"><h2>Примеры</h2><div class="box"><span>Переславль-Залесский и Цимлянск с фото, разметкой и промптами. Перенесу их в таблицу, а фото — на Диск.</span><button class="btn wide" id="seed-go" ${UI.migrating ? 'disabled' : ''}>Перенести примеры</button><span class="status" id="seed-status">${esc(UI.migrating)}</span></div></div>`;
+  if (connected()) {
+    h += `<div class="sect"><h2>Импорт меток из KML</h2><div class="box"><span class="meta">Файл из Google Earth или Google Мои карты. Каждая метка станет точкой без фото — фото добавишь потом.</span><div class="drop" style="min-height:70px"><span>${UI.kml ? 'Выбрать другой файл' : 'Выбрать файл .kml'}</span><input type="file" id="kml-file" accept=".kml,application/vnd.google-earth.kml+xml,application/xml,text/xml"></div>`;
+    if (UI.kml) {
+      const sel = UI.kml.items.filter(x => x.on).length;
+      h += UI.kml.items.length ? `<div class="kml-list">${UI.kml.items.map((x, i) => `<label class="kml-row"><input type="checkbox" data-k="${i}" ${x.on ? 'checked' : ''}><span><b style="font-weight:600">${esc(x.name || 'Без названия')}</b><br><span class="mono" style="color:var(--ink-2)">${fmtDec(x)}</span>${x.dup ? `<br><span class="meta" style="color:var(--now)">Рядом уже есть точка «${esc(x.dup)}»</span>` : ''}</span></label>`).join('')}</div><button class="btn primary wide" id="kml-go" ${sel && !UI.kml.busy ? '' : 'disabled'}>Добавить ${sel} ${plural(sel, 'точку', 'точки', 'точек')}</button>` : `<span class="status bad">В файле не нашлось меток с координатами.</span>`;
+      h += `<span class="status" id="kml-status">${esc(UI.kml.status || '')}</span>`;
+    }
+    h += `</div></div>`;
+  }
+  h += `<div class="sect"><h2>На экран «Домой»</h2><div class="box"><span class="meta">В Safari нажми «Поделиться» и выбери «На экран „Домой“». Now&amp;Future откроется как отдельное приложение.</span></div></div>`;
+  app.innerHTML = h;
+  const on = (sel, fn) => { const el = $(sel); if (el) el.addEventListener('click', fn); };
+  on('#c-save', connect);
+  on('#c-pull', () => pull(true));
+  on('#seed-go', migrateSeed);
+  const kf = $('#kml-file'); if (kf) kf.addEventListener('change', () => kf.files[0] && readKml(kf.files[0]));
+  app.querySelectorAll('[data-k]').forEach(cb => cb.addEventListener('change', () => { UI.kml.items[+cb.dataset.k].on = cb.checked; renderMore(); }));
+  on('#kml-go', importKml);
+}
+function plural(n, a, b, c){ const m = n % 10, mm = n % 100; return m === 1 && mm !== 11 ? a : m >= 2 && m <= 4 && (mm < 12 || mm > 14) ? b : c; }
+async function connect(){
+  const url = $('#c-url').value.trim(), token = $('#c-token').value.trim(), st = $('#c-status');
+  if (!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)) { st.textContent = 'Адрес должен начинаться с https://script.google.com/'; st.className = 'status bad'; return; }
+  if (!token) { st.textContent = 'Нужен пароль.'; st.className = 'status bad'; return; }
+  st.textContent = 'Проверяю…'; st.className = 'status';
+  try {
+    await getJson('ping', { url, token });
+    S.cfg = { url, token }; S.points = []; save(); UI.err = '';
+    st.textContent = 'Подключено'; toast('Таблица подключена');
+    await pull(false);
+    renderMore();
+  } catch(e) { st.textContent = 'Не получилось: ' + (e.name === 'AbortError' ? 'долгий ответ' : (e.message || e)); st.className = 'status bad'; }
+}
+async function migrateSeed(){
+  const todo = (UI.seed || []).filter(sp => !S.points.find(p => p.id === sp.id));
+  const step = t => { UI.migrating = t; const el = $('#seed-status'); if (el) el.textContent = t; };
+  const b = $('#seed-go'); if (b) b.disabled = true;
+  try {
+    for (const sp of todo) {
+      const pt = Object.assign({}, sp);
+      for (const key of ['before', 'after', 'markup']) {
+        if (!sp[key]) continue;
+        step(`${sp.city}: загружаю «${({ before: 'Now', after: 'Future', markup: 'Разметка' })[key]}»…`);
+        const blob = await (await fetch(sp[key])).blob();
+        pt[key] = await uploadBlob(blob, sp.id + '-' + key + '.jpg');
+      }
+      step(`${sp.city}: сохраняю…`);
+      await api({ op: 'save', point: pt });
+      S.points = [pt, ...S.points.filter(x => x.id !== pt.id)]; save();
+    }
+    UI.migrating = ''; toast('Примеры перенесены'); await pull(false); renderMore();
+  } catch(e) { step('Не получилось: ' + UI.err); if (b) b.disabled = false; }
+}
+async function readKml(file){
+  try {
+    const xml = new DOMParser().parseFromString(await file.text(), 'application/xml');
+    if (xml.getElementsByTagName('parsererror').length) throw new Error('bad');
+    const items = [];
+    for (const pm of xml.getElementsByTagName('Placemark')) {
+      const pt = pm.getElementsByTagName('Point')[0]; if (!pt) continue;
+      const co = (pt.getElementsByTagName('coordinates')[0] || {}).textContent || '';
+      const [lon, lat] = co.trim().split(/[\s]+/)[0].split(',').map(Number);
+      const c = valid(lat, lon); if (!c) continue;
+      const name = ((pm.getElementsByTagName('name')[0] || {}).textContent || '').trim();
+      const descRaw = ((pm.getElementsByTagName('description')[0] || {}).textContent || '').trim();
+      const desc = new DOMParser().parseFromString(descRaw, 'text/html').body.textContent.trim();
+      const near = S.points.find(p => hasXY(p) && distM(p, c) < 40);
+      items.push({ name, desc, lat: c.lat, lon: c.lon, dup: near ? near.city : '', on: !near });
+    }
+    UI.kml = { items, status: '' };
+  } catch(e) { UI.kml = { items: [], status: 'Файл не читается как KML.' }; }
+  renderMore();
+}
+async function importKml(){
+  const items = UI.kml.items.filter(x => x.on); UI.kml.busy = true;
+  const st = t => { UI.kml.status = t; const el = $('#kml-status'); if (el) el.textContent = t; };
+  const b = $('#kml-go'); if (b) b.disabled = true;
+  let n = 0;
+  try {
+    for (const x of items) {
+      st(`Добавляю ${++n} из ${items.length}…`);
+      const now = new Date(Date.now() + n).toISOString();
+      const body = { id: newId(), city: x.name || 'Без названия', region: '', place: '', lat: x.lat, lon: x.lon, before: '', after: '', markup: '', tags: [], service: '', prompt: '', notes: x.desc || '', createdAt: now, updatedAt: now };
+      await api({ op: 'save', point: body });
+      S.points = [body, ...S.points]; save();
+    }
+    UI.kml = null; toast(`Добавлено: ${items.length}`); await pull(false); renderMore();
+  } catch(e) { UI.kml.busy = false; st('Остановилось на ' + n + '-й метке: ' + UI.err); renderMore(); }
+}
+
+/* ---------- map ---------- */
+function renderMap(){
+  const pts = filtered().filter(hasXY);
+  app.innerHTML = `<div class="mapbox" id="mapbox">
+    <svg id="svg" role="img" aria-label="Карта точек"><g id="g"><rect x="-4000" y="-4000" width="10000" height="10000" style="fill:var(--water)"/><path d="${MAP.land}" style="fill:var(--land)"/><path d="${MAP.lakes}" style="fill:var(--water)"/><path d="${MAP.rivers}" style="fill:none;stroke:var(--river)" stroke-width="1" vector-effect="non-scaling-stroke"/><g id="refs"></g><g id="pts"></g></g></svg>
+    <div class="legend"><span><i style="background:var(--future)"></i>есть «Future»</span><span><i style="background:var(--surface);border:2px solid var(--now)"></i>пока без «Future»</span></div>
+    <div class="zoombtns"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zfit" aria-label="Показать все точки" style="font-size:15px">⤢</button></div>
+    <div id="pop"></div></div>
+    ${UI.tag || UI.q ? `<p class="meta" style="margin-top:10px">Фильтр из ленты: ${esc([UI.q, UI.tag].filter(Boolean).join(', '))}. <button class="linkish" id="clr">Показать все</button></p>` : ''}`;
+  const clr = $('#clr'); if (clr) clr.addEventListener('click', () => { UI.q = ''; UI.tag = null; renderMap(); });
+  if (!window.d3 || !window.MAP) { $('#mapbox').insertAdjacentHTML('beforeend', '<div class="note" style="position:absolute;left:10px;right:10px;bottom:10px">Карта не загрузилась. Обнови страницу.</div>'); return; }
+  const proj = d3.geoConicEqualArea().parallels([50, 70]).rotate([-100, 0]).scale(MAP.s).translate(MAP.t);
+  const svg = d3.select('#svg'), g = d3.select('#g'), box = $('#mapbox');
+  const W = box.clientWidth, H = box.clientHeight;
+  const refs = REF.map(r => ({ name: r[0], xy: proj([r[2], r[1]]), rank: r[3] }));
+  const P = pts.map(p => ({ p, xy: proj([+p.lon, +p.lat]) }));
+  const refG = d3.select('#refs').selectAll('g').data(refs).join('g').style('pointer-events', 'none');
+  refG.append('circle').style('fill', 'var(--ink-2)');
+  refG.append('text').text(d => d.name).style('fill', 'var(--ink-2)').style('font-family', 'var(--f-body)');
+  let cur = d3.zoomIdentity;
+  const pick = (e, d) => { e.stopPropagation(); UI.popId = d.p.id; showPop(); draw(cur); };
+  const ptG = d3.select('#pts').selectAll('g').data(P).join('g').style('cursor', 'pointer').attr('tabindex', 0).attr('role', 'button').attr('aria-label', d => d.p.city)
+    .on('click', pick).on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(e, d); } });
+  ptG.append('circle').attr('class', 'hit').style('fill', 'transparent');
+  ptG.append('circle').attr('class', 'halo').style('fill', 'var(--surface)');
+  ptG.append('circle').attr('class', 'dot');
+  ptG.append('text').text(d => d.p.city).style('fill', 'var(--ink)').style('font-family', 'var(--f-body)').style('font-weight', 600).style('paint-order', 'stroke').style('stroke', 'var(--paper)').style('pointer-events', 'none');
+  function draw(t){
+    const k = t.k;
+    refG.attr('transform', d => `translate(${d.xy[0]},${d.xy[1]})`).style('display', d => (d.rank === 1 || k > 2.2) ? null : 'none');
+    refG.select('circle').attr('r', 2.2 / k);
+    refG.select('text').attr('x', 5 / k).attr('y', 4 / k).attr('font-size', 11 / k);
+    ptG.attr('transform', d => `translate(${d.xy[0]},${d.xy[1]})`);
+    ptG.select('.hit').attr('r', 20 / k);
+    ptG.select('.halo').attr('r', d => (d.p.id === UI.popId ? 12 : 9) / k);
+    ptG.select('.dot').attr('r', d => (d.p.id === UI.popId ? 9 : 6.5) / k).style('fill', d => d.p.after ? 'var(--future)' : 'var(--surface)').style('stroke', d => d.p.after ? 'none' : 'var(--now)').attr('stroke-width', 2.5 / k);
+    ptG.select('text').attr('x', 11 / k).attr('y', 4.5 / k).attr('font-size', 13 / k).attr('stroke-width', 3 / k);
+  }
+  const zoom = d3.zoom().scaleExtent([0.4, 150]).on('zoom', e => { cur = e.transform; g.attr('transform', cur); draw(cur); });
+  svg.call(zoom).on('dblclick.zoom', null);
+  svg.on('click', () => { if (UI.popId) { UI.popId = null; showPop(); draw(cur); } });
+  function fitTo(list, animate){
+    let xs, ys;
+    if (list.length) { xs = list.map(d => d.xy[0]); ys = list.map(d => d.xy[1]); }
+    else { const a = proj([28, 62]), b = proj([50, 44]); xs = [a[0], b[0]]; ys = [a[1], b[1]]; }
+    let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const m = 120; if (x1 - x0 < m) { const c = (x0 + x1) / 2; x0 = c - m / 2; x1 = c + m / 2; } if (y1 - y0 < m) { const c = (y0 + y1) / 2; y0 = c - m / 2; y1 = c + m / 2; }
+    const k = Math.min(W / (x1 - x0), H / (y1 - y0)) * 0.6;
+    const t = d3.zoomIdentity.translate(W * 0.44, H / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+    (animate ? svg.transition().duration(400) : svg).call(zoom.transform, t);
+  }
+  const focus = UI.focusId && P.find(d => d.p.id === UI.focusId);
+  if (focus) { UI.popId = focus.p.id; svg.call(zoom.transform, d3.zoomIdentity.translate(W / 2, H / 3).scale(25).translate(-focus.xy[0], -focus.xy[1])); UI.focusId = null; showPop(); draw(cur); }
+  else fitTo(P, false);
+  $('#zin').onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1.8);
+  $('#zout').onclick = () => svg.transition().duration(250).call(zoom.scaleBy, 1 / 1.8);
+  $('#zfit').onclick = () => fitTo(P, true);
+  function showPop(){
+    const el = $('#pop'); const p = UI.popId && byId(UI.popId);
+    if (!p) { el.innerHTML = ''; return; }
+    el.innerHTML = `<div class="pop"><button class="x" id="pop-x" aria-label="Закрыть">×</button>${thumb(p)}<div class="card-body">${p.region ? `<span class="eyebrow">${esc(p.region)}</span>` : ''}<h3 style="font-family:var(--f-display);font-weight:500;font-size:18px">${esc(p.city)}</h3>${p.place ? `<div class="meta">${esc(p.place)}</div>` : ''}<div><a class="btn primary" href="#p-${esc(p.id)}">Открыть</a></div></div></div>`;
+    $('#pop-x').onclick = e => { e.stopPropagation(); UI.popId = null; showPop(); draw(cur); };
+  }
+}
+
+/* ---------- start ---------- */
+fetch('seed/seed.json').then(r => r.json()).then(j => { UI.seed = j; }).catch(() => { UI.seed = []; }).finally(() => { if (!UI.draft) route(); });
+route();
+pull(false);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && connected() && Date.now() - S.last > 60000 && !UI.draft) pull(false); });
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 // Сеть в приоритете (новая версия подхватывается сразу), без сети — из кэша. Запросы к скрипту таблицы и к Диску не трогаем.
-const CACHE = 'nf-shell-v2';
+const CACHE = 'nf-shell-v4';
 const SHELL = ['./', 'index.html', 'map.js', 'd3.min.js', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'seed.json',
   'unbounded-latin-500-normal.woff2', 'unbounded-cyrillic-500-normal.woff2', 'unbounded-latin-600-normal.woff2', 'unbounded-cyrillic-600-normal.woff2',
   'golos-text-latin-400-normal.woff2', 'golos-text-cyrillic-400-normal.woff2', 'golos-text-latin-500-normal.woff2', 'golos-text-cyrillic-500-normal.woff2',

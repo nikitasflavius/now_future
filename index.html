@@ -81,6 +81,12 @@ main{padding-block:20px 32px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:14px;color:var(--ink)}
 .chip[aria-pressed="true"]{background:var(--future-soft);border-color:var(--future);color:var(--future-ink)}
+.seg{display:flex;gap:6px;overflow-x:auto;padding:12px 0 0;scrollbar-width:none}
+main > .seg:first-child{padding:0 0 12px}
+.seg::-webkit-scrollbar{display:none}
+.seg .chip{font-weight:500}
+.seg .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+.cnt{opacity:.6;font-variant-numeric:tabular-nums;margin-left:2px}
 .tags{display:flex;gap:6px;flex-wrap:wrap}
 .tag{display:inline-block;background:var(--future-soft);color:var(--future-ink);border-radius:999px;padding:2px 10px;font-size:13px}
 .grid{display:grid;grid-template-columns:1fr;gap:16px}
@@ -206,7 +212,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 function defState(){ return { v: 1, cfg: { url: '', token: '' }, points: [], last: 0 }; }
 let S = (() => { try { const j = JSON.parse(localStorage.getItem(LS)); if (j && j.v === 1) return Object.assign(defState(), j, { cfg: Object.assign(defState().cfg, j.cfg || {}) }); } catch(e) {} return defState(); })();
 function save(){ try { localStorage.setItem(LS, JSON.stringify(S)); } catch(e) {} }
-const UI = { q: '', tag: null, mode: 'slider', pos: 50, confirmDel: false, draft: null, saving: '', savingBad: false, popId: null, focusId: null, kml: null, seed: null, busy: 0, err: '', migrating: '' };
+const UI = { q: '', tag: null, macro: null, mode: 'slider', pos: 50, confirmDel: false, draft: null, saving: '', savingBad: false, popId: null, focusId: null, kml: null, seed: null, busy: 0, err: '', migrating: '' };
 const connected = () => !!(S.cfg.url && S.cfg.token);
 const points = () => connected() ? S.points : (UI.seed || []);
 const byId = id => points().find(p => p.id === id);
@@ -314,7 +320,8 @@ async function uploadBlob(blob, name){ const j = await api({ op: 'upload', name:
 
 /* ---------- filters ---------- */
 function allTags(){ const m = new Map(); points().forEach(p => (p.tags || []).forEach(t => m.set(t, (m.get(t) || 0) + 1))); return [...m.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]); }
-function filtered(){ const q = UI.q.trim().toLowerCase(); return points().filter(p => (!UI.tag || (p.tags || []).includes(UI.tag)) && (!q || [p.city, p.region, p.place, p.notes, (p.tags || []).join(' ')].join(' ').toLowerCase().includes(q))); }
+function allMacros(){ const m = new Map(); points().forEach(p => { if (p.macro) m.set(p.macro, (m.get(p.macro) || 0) + 1); }); return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ru')); }
+function filtered(){ const q = UI.q.trim().toLowerCase(); return points().filter(p => (!UI.macro || p.macro === UI.macro) && (!UI.tag || (p.tags || []).includes(UI.tag)) && (!q || [p.city, p.region, p.macro, p.place, p.notes, (p.tags || []).join(' ')].join(' ').toLowerCase().includes(q))); }
 
 /* ---------- routing ---------- */
 function route(){
@@ -334,6 +341,7 @@ window.addEventListener('hashchange', () => { UI.confirmDel = false; UI.popId = 
 
 function thumb(p){
   const demo = /\.jpg$/i.test(p.before || '') ? '<span class="demo">Пример</span>' : '';
+  if (!p.before && p.after) return `<div class="split">${img(p.after, 900, '')}<span class="lbl l2">Future</span></div>`;
   if (!p.before) return `<div class="split"><span class="nophoto">Фото пока нет</span></div>`;
   return `<div class="split">${img(p.before, 900, '')}${p.after ? `${img(p.after, 900, '', 'aft')}<span class="div"></span><span class="lbl l1">Now</span><span class="lbl l2">Future</span>` : `<span class="planned">Пока без «Future»</span>`}${demo}</div>`;
 }
@@ -348,14 +356,17 @@ function renderFeed(){
     h += connected() ? `<div class="empty"><span class="eyebrow">Здесь пока пусто</span><p>Добавь первую точку или перенеси два примера в таблицу в разделе «Ещё».</p><a class="btn primary" href="#new">Добавить точку</a></div>` : (UI.seed === null ? '<p class="status">Загружаю примеры…</p>' : '');
   } else {
     h += `<input class="search" id="q" type="search" placeholder="Город, регион, тег…" value="${esc(UI.q)}" aria-label="Поиск">`;
+    const macros = allMacros();
+    if (macros.length) h += `<div class="seg" role="group" aria-label="Макрорегион"><button class="chip" data-macro="" aria-pressed="${!UI.macro}">Все</button>${macros.map(([m, n]) => `<button class="chip" data-macro="${esc(m)}" aria-pressed="${UI.macro === m}">${esc(m)} <span class="cnt">${n}</span></button>`).join('')}</div>`;
     h += tags.length ? `<div class="chips">${tags.map(t => `<button class="chip" data-tag="${esc(t)}" aria-pressed="${UI.tag === t}">${esc(t)}</button>`).join('')}</div>` : '<div style="height:12px"></div>';
-    h += list.length ? `<div class="grid">${list.map(p => `<a class="card" href="#p-${esc(p.id)}">${thumb(p)}<div class="card-body"><h3>${esc(p.city)}</h3><div class="meta">${esc([p.place, p.region].filter(Boolean).join(' · '))}</div>${(p.tags || []).length ? `<div class="tags">${p.tags.slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}</div></a>`).join('')}</div>`
+    h += list.length ? `<div class="grid">${list.map(p => `<a class="card" href="#p-${esc(p.id)}">${thumb(p)}<div class="card-body"><h3>${esc(p.city)}</h3><div class="meta">${esc([p.place, p.region, p.macro].filter(Boolean).join(' · '))}</div>${(p.tags || []).length ? `<div class="tags">${p.tags.slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}</div></a>`).join('')}</div>`
       : `<div class="empty"><p>Под этот фильтр ничего не подходит.</p><button class="btn" id="reset">Сбросить</button></div>`;
   }
   app.innerHTML = h;
   const q = $('#q'); if (q) q.addEventListener('input', e => { UI.q = e.target.value; const c = e.target.selectionStart; renderFeed(); const n = $('#q'); n.focus(); try { n.setSelectionRange(c, c); } catch(_) {} });
-  app.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => { UI.tag = UI.tag === b.dataset.tag ? null : b.dataset.tag; renderFeed(); }));
-  const r = $('#reset'); if (r) r.addEventListener('click', () => { UI.q = ''; UI.tag = null; renderFeed(); });
+  app.querySelectorAll('[data-tag]').forEach(b => b.addEventListener('click', () => { UI.tag = UI.tag === b.dataset.tag ? null : b.dataset.tag; renderFeed(); }));
+  app.querySelectorAll('[data-macro]').forEach(b => b.addEventListener('click', () => { UI.macro = b.dataset.macro || null; renderFeed(); }));
+  const r = $('#reset'); if (r) r.addEventListener('click', () => { UI.q = ''; UI.tag = null; UI.macro = null; renderFeed(); });
 }
 
 /* ---------- point ---------- */
@@ -377,12 +388,12 @@ function renderPoint(id){
     ${modes.length > 1 ? `<div class="modes" role="group" aria-label="Вид">${modes.map(m => `<button class="chip" data-mode="${m[0]}" aria-pressed="${UI.mode === m[0]}">${m[1]}</button>`).join('')}</div>` : ''}
     ${view}
     <div class="head">
-      ${p.region ? `<span class="eyebrow">${esc(p.region)}</span>` : ''}
+      ${p.region || p.macro ? `<span class="eyebrow">${esc([p.macro, p.region].filter(Boolean).join(' · '))}</span>` : ''}
       <h1>${esc(p.city)}</h1>
       ${p.place ? `<div class="meta" style="font-size:16px">${esc(p.place)}</div>` : ''}
       ${(p.tags || []).length ? `<div class="tags" style="margin-top:4px">${p.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
     </div>
-    ${connected() && !isDemo ? `<div class="actions"><a class="btn" href="#edit-${esc(p.id)}">Изменить</a><button class="btn danger" id="del">Удалить</button></div>` : ''}
+    ${connected() && !isDemo ? `<div class="actions"><a class="btn" href="#edit-${esc(p.id)}">Изменить</a>${p.before && p.after ? '<button class="btn" id="swap">Поменять Now и Future</button>' : ''}<button class="btn danger" id="del">Удалить</button></div>` : ''}
     ${UI.confirmDel ? `<div class="confirm" role="alertdialog" aria-label="Удаление"><span>Удалить точку и её фото с Диска?</span><button class="btn danger" id="del-yes">Удалить</button><button class="btn ghost" id="del-no">Отмена</button></div>` : ''}
     <div class="facts">
       ${hasXY(p) ? `<div class="fact"><span class="eyebrow">Координаты</span><span class="v mono">${fmtDms(p)}</span><span class="v mono" style="color:var(--ink-2)">${fmtDec(p)}</span><span class="row-links"><button class="linkish" id="copy-c">Скопировать</button><a href="${yandexUrl(p)}" target="_blank" rel="noopener">Яндекс Карты ↗</a><a href="#map" id="on-map">На карте</a></span></div>` : ''}
@@ -398,6 +409,7 @@ function renderPoint(id){
   on('#copy-c', e => copy(fmtDms(p) + ' (' + fmtDec(p) + ')', e.currentTarget));
   on('#copy-p', e => copy(p.prompt, e.currentTarget, '#prompt-text'));
   on('#on-map', () => { UI.focusId = p.id; });
+  on('#swap', async e => { e.currentTarget.disabled = true; const body = Object.assign({}, p, { before: p.after, after: p.before, updatedAt: new Date().toISOString() }); try { await api({ op: 'save', point: body }); S.points = S.points.map(q => q.id === body.id ? body : q); save(); toast('Поменял местами'); } catch(err) { toast('Не получилось: ' + UI.err); } renderPoint(id); });
   if (UI.mode === 'slider') wireSlider();
 }
 function copy(text, btn, sel){
@@ -431,7 +443,7 @@ function renderEditor(id){
   if (!connected()) { app.innerHTML = `<div class="empty"><span class="eyebrow">Таблица не подключена</span><p>Фото хранятся на твоём Google Диске, поэтому сначала подключи таблицу.</p><a class="btn primary" href="#more">Подключить</a></div>`; return; }
   const p = id ? byId(id) : null;
   if (id && !p) { app.innerHTML = `<div class="empty"><p>Такой точки нет.</p></div>`; return; }
-  if (!UI.draft) UI.draft = p ? { city: p.city || '', region: p.region || '', place: p.place || '', coords: hasXY(p) ? fmtDms(p) : '', tags: (p.tags || []).join(', '), service: p.service || '', prompt: p.prompt || '', notes: p.notes || '', files: {}, drop: {} } : { city: '', region: '', place: '', coords: '', tags: '', service: 'Arena', prompt: '', notes: '', files: {}, drop: {} };
+  if (!UI.draft) UI.draft = p ? { city: p.city || '', region: p.region || '', macro: p.macro || '', place: p.place || '', coords: hasXY(p) ? fmtDms(p) : '', tags: (p.tags || []).join(', '), service: p.service || '', prompt: p.prompt || '', notes: p.notes || '', files: {}, drop: {} } : { city: '', region: '', macro: UI.macro || '', place: '', coords: '', tags: '', service: 'Arena', prompt: '', notes: '', files: {}, drop: {} };
   const d = UI.draft;
   const slot = (key, label, hint) => {
     const f = d.files[key]; const cur = p && p[key] && !d.drop[key] ? p[key] : '';
@@ -447,6 +459,7 @@ function renderEditor(id){
       <div class="field"><label for="i-city">Город</label><input type="text" id="i-city" value="${esc(d.city)}" placeholder="Торжок" autocomplete="off"></div>
       <div class="field"><label for="i-region">Регион</label><input type="text" id="i-region" value="${esc(d.region)}" placeholder="Тверская область" autocomplete="off"></div>
     </div>
+    <div class="field"><label for="i-macro">Макрорегион</label><input type="text" id="i-macro" value="${esc(d.macro)}" placeholder="Средняя Русь, Юг…" autocomplete="off">${allMacros().length ? `<div class="chips" style="padding:4px 0 0;margin:0">${allMacros().map(([m]) => `<button type="button" class="chip" data-setmacro="${esc(m)}">${esc(m)}</button>`).join('')}</div>` : ''}</div>
     <div class="field"><label for="i-place">Место</label><input type="text" id="i-place" value="${esc(d.place)}" placeholder="Улица, перекрёсток, площадь" autocomplete="off"></div>
     <div class="field"><label for="i-coords">Координаты</label><input type="text" id="i-coords" value="${esc(d.coords)}" placeholder="56°44'17.68&quot;N 38°50'42.94&quot;E" autocomplete="off" autocapitalize="off" spellcheck="false"><span class="hint">Градусы с минутами и секундами, десятичные градусы или ссылка из Яндекс Карт.</span><span class="parsed ${d.coords ? (c ? 'ok' : 'bad') : ''}" id="coords-out">${d.coords ? (c ? 'Распознано: ' + fmtDec(c) : 'Не получилось распознать') : ''}</span></div>
     <div class="two">
@@ -459,9 +472,10 @@ function renderEditor(id){
     <span class="status${UI.savingBad ? ' bad' : ''}" id="save-status">${esc(UI.saving)}</span>
   </form>`;
   const bind = (sel, key) => { const el = $('#' + sel); el.addEventListener('input', () => { d[key] = el.value; if (key === 'coords') { const cc = parseCoords(el.value); const o = $('#coords-out'); o.className = 'parsed ' + (el.value ? (cc ? 'ok' : 'bad') : ''); o.textContent = el.value ? (cc ? 'Распознано: ' + fmtDec(cc) : 'Не получилось распознать') : ''; } }); };
-  [['i-city','city'],['i-region','region'],['i-place','place'],['i-coords','coords'],['i-tags','tags'],['i-service','service'],['i-prompt','prompt'],['i-notes','notes']].forEach(a => bind(...a));
+  [['i-city','city'],['i-region','region'],['i-macro','macro'],['i-place','place'],['i-coords','coords'],['i-tags','tags'],['i-service','service'],['i-prompt','prompt'],['i-notes','notes']].forEach(a => bind(...a));
   app.querySelectorAll('input[type=file]').forEach(inp => inp.addEventListener('change', () => { const file = inp.files[0]; if (!file) return; const k = inp.dataset.key; if (d.files[k]) URL.revokeObjectURL(d.files[k].preview); d.files[k] = { file, preview: URL.createObjectURL(file) }; d.drop[k] = false; renderEditor(id); }));
   app.querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); const k = b.dataset.rm; if (d.files[k]) { URL.revokeObjectURL(d.files[k].preview); delete d.files[k]; } d.drop[k] = true; renderEditor(id); }));
+  app.querySelectorAll('[data-setmacro]').forEach(b => b.addEventListener('click', () => { d.macro = b.dataset.setmacro; $('#i-macro').value = d.macro; }));
   app.querySelectorAll('[data-addtag]').forEach(b => b.addEventListener('click', () => { const list = d.tags.split(',').map(s => s.trim()).filter(Boolean); if (!list.includes(b.dataset.addtag)) list.push(b.dataset.addtag); d.tags = list.join(', '); $('#i-tags').value = d.tags; }));
   $('#form').addEventListener('submit', e => { e.preventDefault(); savePoint(p); });
 }
@@ -483,7 +497,7 @@ async function savePoint(p){
     }
     setStatus('Сохраняю в таблицу…');
     const now = new Date().toISOString();
-    const body = { id: p ? p.id : newId(), city: d.city.trim(), region: d.region.trim(), place: d.place.trim(), lat: c.lat, lon: c.lon,
+    const body = { id: p ? p.id : newId(), city: d.city.trim(), region: d.region.trim(), macro: d.macro.trim(), place: d.place.trim(), lat: c.lat, lon: c.lon,
       before: 'before' in ids ? ids.before : (p && p.before) || '', after: 'after' in ids ? ids.after : (p && p.after) || '', markup: 'markup' in ids ? ids.markup : (p && p.markup) || '',
       tags: d.tags.split(',').map(s => s.trim()).filter(Boolean), service: d.service.trim(), prompt: d.prompt, notes: d.notes.trim(), createdAt: (p && p.createdAt) || now, updatedAt: now };
     await api({ op: 'save', point: body });
@@ -501,7 +515,7 @@ function renderMore(){
   const cities = new Set(all.map(p => p.city)).size, done = all.filter(p => p.after).length;
   const seedMissing = connected() && UI.seed && UI.seed.some(sp => !S.points.find(p => p.id === sp.id));
   let h = '';
-  if (connected()) h += `<div class="sect"><h2>Атлас</h2><div class="stats"><div class="stat"><b>${all.length}</b><span class="meta">точек</span></div><div class="stat"><b>${cities}</b><span class="meta">городов</span></div><div class="stat"><b>${done}</b><span class="meta">с «Future»</span></div></div></div>`;
+  if (connected()) h += `<div class="sect"><h2>Атлас</h2><div class="stats"><div class="stat"><b>${all.length}</b><span class="meta">точек</span></div><div class="stat"><b>${cities}</b><span class="meta">городов</span></div><div class="stat"><b>${done}</b><span class="meta">с «Future»</span></div></div>${allMacros().length ? `<div class="box" style="margin-top:10px;gap:6px">${allMacros().map(([m, n]) => `<div style="display:flex;justify-content:space-between;gap:12px"><span>${esc(m)}</span><span class="mono">${n}</span></div>`).join('')}${all.some(p => !p.macro) ? `<div style="display:flex;justify-content:space-between;gap:12px;color:var(--ink-2)"><span>без макрорегиона</span><span class="mono">${all.filter(p => !p.macro).length}</span></div>` : ''}</div>` : ''}</div>`;
   h += `<div class="sect"><h2>Таблица</h2><div class="box">
     <div class="field"><label for="c-url">Адрес скрипта (Web app URL)</label><input type="url" id="c-url" value="${esc(S.cfg.url)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
     <div class="field"><label for="c-token">Пароль (тот же, что в скрипте)</label><input type="password" id="c-token" value="${esc(S.cfg.token)}" autocomplete="off"></div>
@@ -511,10 +525,12 @@ function renderMore(){
   </div></div>`;
   if (seedMissing) h += `<div class="sect"><h2>Примеры</h2><div class="box"><span>Переславль-Залесский и Цимлянск с фото, разметкой и промптами. Перенесу их в таблицу, а фото — на Диск.</span><button class="btn wide" id="seed-go" ${UI.migrating ? 'disabled' : ''}>Перенести примеры</button><span class="status" id="seed-status">${esc(UI.migrating)}</span></div></div>`;
   if (connected()) {
-    h += `<div class="sect"><h2>Импорт меток из KML</h2><div class="box"><span class="meta">Файл из Google Earth или Google Мои карты. Каждая метка станет точкой без фото — фото добавишь потом.</span><div class="drop" style="min-height:70px"><span>${UI.kml ? 'Выбрать другой файл' : 'Выбрать файл .kml'}</span><input type="file" id="kml-file" accept=".kml,application/vnd.google-earth.kml+xml,application/xml,text/xml"></div>`;
+    h += `<div class="sect"><h2>Импорт меток из KML</h2><div class="box"><span class="meta">Файл из Google Earth или Google Мои карты. Каждая метка станет точкой. Если к метке в Google Earth прикреплены фото, первое станет «Now», второе — «Future»; перепутанные можно поменять местами на странице точки.</span><div class="drop" style="min-height:70px"><span>${UI.kml ? 'Выбрать другой файл' : 'Выбрать файл .kml'}</span><input type="file" id="kml-file" accept=".kml,application/vnd.google-earth.kml+xml,application/xml,text/xml"></div>`;
     if (UI.kml) {
       const sel = UI.kml.items.filter(x => x.on).length;
-      h += UI.kml.items.length ? `<div class="kml-list">${UI.kml.items.map((x, i) => `<label class="kml-row"><input type="checkbox" data-k="${i}" ${x.on ? 'checked' : ''}><span><b style="font-weight:600">${esc(x.name || 'Без названия')}</b><br><span class="mono" style="color:var(--ink-2)">${fmtDec(x)}</span>${x.dup ? `<br><span class="meta" style="color:var(--now)">Рядом уже есть точка «${esc(x.dup)}»</span>` : ''}</span></label>`).join('')}</div><button class="btn primary wide" id="kml-go" ${sel && !UI.kml.busy ? '' : 'disabled'}>Добавить ${sel} ${plural(sel, 'точку', 'точки', 'точек')}</button>` : `<span class="status bad">В файле не нашлось меток с координатами.</span>`;
+      const groups = [...new Set(UI.kml.items.map(x => x.macro))];
+      const fix = UI.kml.items.filter(needsFix).length;
+      h += UI.kml.items.length ? `<div class="kml-list">${groups.map(g => `<span class="eyebrow" style="margin-top:6px">${esc(g || 'Без папки')}</span>` + UI.kml.items.map((x, i) => x.macro !== g ? '' : `<label class="kml-row"><input type="checkbox" data-k="${i}" ${x.on ? 'checked' : ''}><span><b style="font-weight:600">${esc(x.name || 'Без названия')}</b>${x.sub ? ` <span class="meta">· ${esc(x.sub)}</span>` : ''}<br><span class="mono" style="color:var(--ink-2)">${fmtDec(x)}</span>${x.imgs.length ? ` <span class="tag">${x.imgs.length} фото</span>` : ''}${x.dup ? `<br><span class="meta" style="color:var(--now)">Рядом уже есть точка «${esc(x.dup)}»${fixText(x)}</span>` : ''}</span></label>`).join('')).join('')}</div>${fix ? `<span class="meta">Существующие точки, которые дополню из файла: ${fix}.</span>` : ''}${UI.kml.items.some(x => x.imgs.length) ? `<span class="meta">Фото скачиваются по одному, на 30 точек уйдёт несколько минут. Не сворачивай приложение и не давай телефону уснуть; если прервётся, загрузи этот же файл ещё раз — готовые точки пропустятся.</span>` : ''}<button class="btn primary wide" id="kml-go" ${(sel || fix) && !UI.kml.busy ? '' : 'disabled'}>Добавить ${sel} ${plural(sel, 'точку', 'точки', 'точек')}</button>` : `<span class="status bad">В файле не нашлось меток с координатами.</span>`;
       h += `<span class="status" id="kml-status">${esc(UI.kml.status || '')}</span>`;
     }
     h += `</div></div>`;
@@ -576,40 +592,66 @@ async function readKml(file){
       const name = ((pm.getElementsByTagName('name')[0] || {}).textContent || '').trim();
       const descRaw = ((pm.getElementsByTagName('description')[0] || {}).textContent || '').trim();
       const desc = new DOMParser().parseFromString(descRaw, 'text/html').body.textContent.trim();
+      const folders = []; for (let n = pm.parentNode; n && n.nodeType === 1; n = n.parentNode) if (n.localName === 'Folder') { const fn = [...n.children].find(ch => ch.localName === 'name'); if (fn && fn.textContent.trim()) folders.unshift(fn.textContent.trim()); }
+      const macro = folders[0] || '', sub = folders.length > 1 ? folders[folders.length - 1] : '';
       const near = S.points.find(p => hasXY(p) && distM(p, c) < 40);
-      items.push({ name, desc, lat: c.lat, lon: c.lon, dup: near ? near.city : '', on: !near });
+      const imgs = [...pm.getElementsByTagNameNS('http://www.google.com/kml/ext/2.2', 'imageUrl')].map(e => e.textContent.trim()).filter(u => /^https:\/\//.test(u)).map(u => u.replace('{size}', '2400'));
+      items.push({ name, desc, lat: c.lat, lon: c.lon, macro, sub, imgs, dup: near ? near.city : '', dupId: near ? near.id : '', on: !near });
     }
     UI.kml = { items, status: '' };
   } catch(e) { UI.kml = { items: [], status: 'Файл не читается как KML.' }; }
   renderMore();
 }
+function needsFix(x){ const p = x.dupId && byId(x.dupId); if (!p) return false; return (x.macro && !p.macro) || (x.imgs.length && !p.before); }
+function fixText(x){ const p = byId(x.dupId) || {}; const w = []; if (x.macro && !p.macro) w.push('проставлю макрорегион'); if (x.imgs.length && !p.before) w.push('добавлю фото'); return w.length ? ', ' + w.join(' и ') : ''; }
+async function fetchPhotos(x, label, st){
+  const out = {}; let fails = 0;
+  const keys = ['before', 'after', 'markup'];
+  for (let i = 0; i < Math.min(x.imgs.length, 3); i++) {
+    st(`${label}: скачиваю фото ${i + 1} из ${Math.min(x.imgs.length, 3)}…`);
+    try { out[keys[i]] = (await api({ op: 'fetch', url: x.imgs[i], name: (x.name || 'photo') + '-' + keys[i] + '.jpg' })).id; } catch(e) { fails++; }
+  }
+  return { ids: out, fails };
+}
 async function importKml(){
   const items = UI.kml.items.filter(x => x.on); UI.kml.busy = true;
   const st = t => { UI.kml.status = t; const el = $('#kml-status'); if (el) el.textContent = t; };
   const b = $('#kml-go'); if (b) b.disabled = true;
-  let n = 0;
+  let n = 0, fails = 0;
   try {
     for (const x of items) {
-      st(`Добавляю ${++n} из ${items.length}…`);
+      ++n; const label = `${n} из ${items.length}, ${x.name || 'без названия'}`;
+      const ph = x.imgs.length ? await fetchPhotos(x, label, st) : { ids: {}, fails: 0 }; fails += ph.fails;
+      st(`${label}: сохраняю…`);
       const now = new Date(Date.now() + n).toISOString();
-      const body = { id: newId(), city: x.name || 'Без названия', region: '', place: '', lat: x.lat, lon: x.lon, before: '', after: '', markup: '', tags: [], service: '', prompt: '', notes: x.desc || '', createdAt: now, updatedAt: now };
+      const body = { id: newId(), city: x.name || 'Без названия', region: x.sub || '', macro: x.macro || '', place: '', lat: x.lat, lon: x.lon, before: ph.ids.before || '', after: ph.ids.after || '', markup: ph.ids.markup || '', tags: [], service: 'Arena', prompt: '', notes: x.desc || '', createdAt: now, updatedAt: now };
       await api({ op: 'save', point: body });
       S.points = [body, ...S.points]; save();
     }
-    UI.kml = null; toast(`Добавлено: ${items.length}`); await pull(false); renderMore();
+    const fixes = UI.kml.items.filter(needsFix);
+    for (const x of fixes) {
+      const p = byId(x.dupId); const upd = { updatedAt: new Date().toISOString() };
+      if (x.macro && !p.macro) upd.macro = x.macro;
+      if (x.imgs.length && !p.before) { const ph = await fetchPhotos(x, p.city, st); fails += ph.fails; Object.assign(upd, ph.ids); }
+      st(`${p.city}: сохраняю…`);
+      const body = Object.assign({}, p, upd); await api({ op: 'save', point: body }); S.points = S.points.map(q => q.id === body.id ? body : q); save();
+    }
+    UI.kml = null; toast(`Добавлено: ${items.length}` + (fixes.length ? `, дополнено: ${fixes.length}` : '') + (fails ? `. Не скачались фото: ${fails}` : '')); await pull(false); renderMore();
   } catch(e) { UI.kml.busy = false; st('Остановилось на ' + n + '-й метке: ' + UI.err); renderMore(); }
 }
 
 /* ---------- map ---------- */
 function renderMap(){
   const pts = filtered().filter(hasXY);
-  app.innerHTML = `<div class="mapbox" id="mapbox">
+  const macros = allMacros();
+  app.innerHTML = (macros.length ? `<div class="seg" role="group" aria-label="Макрорегион"><button class="chip" data-macro="" aria-pressed="${!UI.macro}">Все</button>${macros.map(([m]) => `<button class="chip" data-macro="${esc(m)}" aria-pressed="${UI.macro === m}">${esc(m)}</button>`).join('')}</div>` : '') + `<div class="mapbox" id="mapbox">
     <svg id="svg" role="img" aria-label="Карта точек"><g id="g"><rect x="-4000" y="-4000" width="10000" height="10000" style="fill:var(--water)"/><path d="${MAP.land}" style="fill:var(--land)"/><path d="${MAP.lakes}" style="fill:var(--water)"/><path d="${MAP.rivers}" style="fill:none;stroke:var(--river)" stroke-width="1" vector-effect="non-scaling-stroke"/><g id="refs"></g><g id="pts"></g></g></svg>
     <div class="legend"><span><i style="background:var(--future)"></i>есть «Future»</span><span><i style="background:var(--surface);border:2px solid var(--now)"></i>пока без «Future»</span></div>
     <div class="zoombtns"><button id="zin" aria-label="Приблизить">+</button><button id="zout" aria-label="Отдалить">−</button><button id="zfit" aria-label="Показать все точки" style="font-size:15px">⤢</button></div>
     <div id="pop"></div></div>
     ${UI.tag || UI.q ? `<p class="meta" style="margin-top:10px">Фильтр из ленты: ${esc([UI.q, UI.tag].filter(Boolean).join(', '))}. <button class="linkish" id="clr">Показать все</button></p>` : ''}`;
-  const clr = $('#clr'); if (clr) clr.addEventListener('click', () => { UI.q = ''; UI.tag = null; renderMap(); });
+  const clr = $('#clr'); if (clr) clr.addEventListener('click', () => { UI.q = ''; UI.tag = null; UI.macro = null; renderMap(); });
+  app.querySelectorAll('[data-macro]').forEach(b => b.addEventListener('click', () => { UI.macro = b.dataset.macro || null; renderMap(); }));
   if (!window.d3 || !window.MAP) { $('#mapbox').insertAdjacentHTML('beforeend', '<div class="note" style="position:absolute;left:10px;right:10px;bottom:10px">Карта не загрузилась. Обнови страницу.</div>'); return; }
   const proj = d3.geoConicEqualArea().parallels([50, 70]).rotate([-100, 0]).scale(MAP.s).translate(MAP.t);
   const svg = d3.select('#svg'), g = d3.select('#g'), box = $('#mapbox');
@@ -636,7 +678,7 @@ function renderMap(){
     ptG.select('.hit').attr('r', 20 / k);
     ptG.select('.halo').attr('r', d => (d.p.id === UI.popId ? 12 : 9) / k);
     ptG.select('.dot').attr('r', d => (d.p.id === UI.popId ? 9 : 6.5) / k).style('fill', d => d.p.after ? 'var(--future)' : 'var(--surface)').style('stroke', d => d.p.after ? 'none' : 'var(--now)').attr('stroke-width', 2.5 / k);
-    ptG.select('text').attr('x', 11 / k).attr('y', 4.5 / k).attr('font-size', 13 / k).attr('stroke-width', 3 / k);
+    ptG.select('text').attr('x', 11 / k).attr('y', 4.5 / k).attr('font-size', 13 / k).attr('stroke-width', 3 / k).style('display', d => (P.length <= 8 || k > 5 || d.p.id === UI.popId) ? null : 'none');
   }
   const zoom = d3.zoom().scaleExtent([0.4, 150]).on('zoom', e => { cur = e.transform; g.attr('transform', cur); draw(cur); });
   svg.call(zoom).on('dblclick.zoom', null);
@@ -660,7 +702,7 @@ function renderMap(){
   function showPop(){
     const el = $('#pop'); const p = UI.popId && byId(UI.popId);
     if (!p) { el.innerHTML = ''; return; }
-    el.innerHTML = `<div class="pop"><button class="x" id="pop-x" aria-label="Закрыть">×</button>${thumb(p)}<div class="card-body">${p.region ? `<span class="eyebrow">${esc(p.region)}</span>` : ''}<h3 style="font-family:var(--f-display);font-weight:500;font-size:18px">${esc(p.city)}</h3>${p.place ? `<div class="meta">${esc(p.place)}</div>` : ''}<div><a class="btn primary" href="#p-${esc(p.id)}">Открыть</a></div></div></div>`;
+    el.innerHTML = `<div class="pop"><button class="x" id="pop-x" aria-label="Закрыть">×</button>${thumb(p)}<div class="card-body">${p.region || p.macro ? `<span class="eyebrow">${esc([p.macro, p.region].filter(Boolean).join(' · '))}</span>` : ''}<h3 style="font-family:var(--f-display);font-weight:500;font-size:18px">${esc(p.city)}</h3>${p.place ? `<div class="meta">${esc(p.place)}</div>` : ''}<div><a class="btn primary" href="#p-${esc(p.id)}">Открыть</a></div></div></div>`;
     $('#pop-x').onclick = e => { e.stopPropagation(); UI.popId = null; showPop(); draw(cur); };
   }
 }
